@@ -120,6 +120,9 @@ export function loadCommunity(): string | null {
 /**
  * Which kicktipp site to use: 'de' (German routes, default) or 'com' (English routes).
  * German-only communities live on kicktipp.de; international ones on kicktipp.com.
+ *
+ * Global value, used when no community context is available. Resolution order:
+ * KICKTIPP_SITE env → [site] config → null (caller falls back to default).
  */
 export function loadSite(): string | null {
   if (process.env.KICKTIPP_SITE) return process.env.KICKTIPP_SITE;
@@ -130,6 +133,23 @@ export function loadSite(): string | null {
 export function saveSite(name: string): void {
   const config = readConfig();
   config.site = { name };
+  writeConfig(config);
+}
+
+/**
+ * Resolve the site for a specific community. Returns null when nothing is
+ * configured yet (so the caller can probe and persist). Resolution order:
+ * KICKTIPP_SITE env (global override) → per-community [sites] → [site] → null.
+ */
+export function loadSiteForCommunity(community: string): string | null {
+  if (process.env.KICKTIPP_SITE) return process.env.KICKTIPP_SITE;
+  const config = readConfig();
+  return config.sites?.[community] || config.site?.name || null;
+}
+
+export function saveSiteForCommunity(community: string, site: string): void {
+  const config = readConfig();
+  config.sites = { ...(config.sites || {}), [community]: site };
   writeConfig(config);
 }
 

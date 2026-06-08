@@ -1,6 +1,6 @@
 import { Page } from 'playwright';
 import * as cheerio from 'cheerio';
-import { dismissConsent, parseOdds, getCommunities, getPlayers } from './browser.js';
+import { dismissConsent, parseOdds, getCommunities, getPlayers, ensureCommunitySite } from './browser.js';
 import {
   getPredictUrl,
   getLeaderboardUrl,
@@ -52,7 +52,10 @@ function parseMatchDate(dateStr: string): Date | null {
 
 export async function resolveCommunity(page: Page): Promise<string> {
   const saved = loadCommunity();
-  if (saved) return saved;
+  if (saved) {
+    await ensureCommunitySite(page, saved);
+    return saved;
+  }
   const all = await getCommunities(page);
   if (!all.length) throw new Error('No communities found. Run `kicktipp set-community` first.');
   throw new Error(`No community set. Available: ${all.join(', ')}. Run \`kicktipp set-community\` first.`);

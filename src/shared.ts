@@ -1,7 +1,7 @@
 import readline from 'readline';
 import { Page } from 'playwright';
 import { loadCommunity, saveCommunity } from './config.js';
-import { getCommunities } from './browser.js';
+import { getCommunities, ensureCommunitySite } from './browser.js';
 
 export const ask = (question: string): Promise<string> => {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
@@ -22,5 +22,6 @@ export async function ensureCommunity(page: Page): Promise<string> {
     console.log(`Saved '${all[idx]}' as default community.`);
     community = all[idx];
   }
+  await ensureCommunitySite(page, community);
   return community;
 }
