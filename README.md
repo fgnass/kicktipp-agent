@@ -186,6 +186,41 @@ KICKTIPP_SITE=com kicktipp players
 
 Valid values are `de` (default) and `com`.
 
+## Automated daily betting (GitHub Actions + Claude Code)
+
+You can let an agent place your predictions every day in the cloud — no local machine
+required. The workflow in [`.github/workflows/auto-bet.yml`](.github/workflows/auto-bet.yml)
+runs on a daily cron, builds the project, and lets [Claude Code](https://code.claude.com)
+(`claude -p`) drive the kicktipp MCP server: it reads the current matchday's odds and places
+sensible predictions for any match you haven't tipped yet. The strategy lives in
+[`.github/auto-bet-prompt.md`](.github/auto-bet-prompt.md) and is easy to tweak.
+
+### One-time setup
+
+1. **Fork/push this repo to GitHub** (the workflow runs from your repo).
+
+2. **Add repository secrets** under *Settings → Secrets and variables → Actions*:
+
+   | Secret | Value |
+   |--------|-------|
+   | `KICKTIPP_EMAIL` | your kicktipp.de login email |
+   | `KICKTIPP_PASSWORD` | your kicktipp.de password |
+   | `KICKTIPP_COMMUNITY` | your community slug, e.g. `liotipp-26` |
+   | `ANTHROPIC_API_KEY` | your Claude API key from [console.anthropic.com](https://console.anthropic.com) |
+
+3. **Test it**: open the *Actions* tab → *Auto Bet* → *Run workflow*. Check the
+   `Place bets` step output for the agent's summary.
+
+The cron is `0 6 * * *` (06:00 UTC). Edit it in the workflow to change the time, or add
+more entries to run several times a day. The job uses `claude-opus-4-8`; a daily run is
+just a handful of small tool calls, so the cost is minimal. Switch the `--model` flag to
+`claude-sonnet-4-6` in the workflow if you want to cut token cost further.
+
+> **Note on credentials in CI:** secrets are injected only into the steps that need them
+> and the MCP config (with your kicktipp password) is written to the ephemeral runner's
+> `$RUNNER_TEMP` (chmod 600), which is discarded when the job ends. The agent never sees
+> your password — the MCP server uses it directly.
+
 ## Development
 
 ```bash
