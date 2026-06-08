@@ -30,10 +30,22 @@ For every untipped match:
    - If scoring is odds-weighted, factor in that a correct underdog or draw pays more — the highest-probability result is often not the highest-EV tip.
    - Otherwise, the modal real-world results are strong anchors: favorite 2:1 or 2:0, evenly-matched games 1:1.
 
-## 4. Place and report
+## 4. Place the match bets
 
-- Place ALL predictions in a SINGLE `place_bets` call with `dry_run=false`, omitting `matchday` (current matchday). Use the EXACT team names from `get_bets`, formatted as `"Home vs Away=H:G"`.
-- Report a concise summary: the scoring scheme you detected, the variance posture you chose, and per match: your pick, the implied probabilities (or odds), and a one-line reason. If `place_bets` reports an error, report it clearly.
+- Place ALL match predictions in a SINGLE `place_bets` call with `dry_run=false`, omitting `matchday` (current matchday). Use the EXACT team names from `get_bets`, formatted as `"Home vs Away=H:G"`.
+
+## 5. Bonus questions (tournament-long, one-time)
+
+Bonus questions (group winners, semi-finalists, top scorer, champion, …) are answered once, before their deadline. Handle them every run, but idempotently:
+
+1. `get_bonus_questions` — each question has one or more `selects`; a select's `selected` is `-1` when unanswered.
+2. Only answer questions where **all** selects are still `-1` (fully unanswered). Never overwrite a question that already has answers. If everything is answered, skip this section.
+3. Strategy: **favorites / most likely outcome** — pick the strongest team(s) for each question (use football knowledge; `get_table` may help for group standings). For a question with multiple selects (e.g. "Wer erreicht das Halbfinale?"), pick that many DISTINCT strong teams.
+4. Place them with `place_bonus_bets`, `dry_run=false`. Format each answer as `"Question text=Answer"`, using the EXACT question text and EXACT option text from `get_bonus_questions`. For a multi-select question, pass one entry per pick (same question text, different answers).
+
+## 6. Report
+
+Report a concise summary: the scoring scheme you detected, the variance posture you chose, per match your pick + implied probabilities + a one-line reason, and the bonus answers you placed (or "bonus already answered"). If any call reports an error, report it clearly.
 
 ## Rules
 
