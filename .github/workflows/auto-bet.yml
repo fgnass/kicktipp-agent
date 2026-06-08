@@ -8,6 +8,11 @@ on:
     # 06:00 UTC daily (= 08:00 CEST). Adjust as you like; cron is UTC.
     - cron: '0 6 * * *'
   workflow_dispatch: # allows manual runs from the Actions tab for testing
+    inputs:
+      dry_run:
+        description: "Dry run (validate only, do not submit any bets)"
+        type: boolean
+        default: true
 
 concurrency:
   group: auto-bet
@@ -47,8 +52,14 @@ jobs:
       - name: Place bets
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DRY_RUN: ${{ github.event.inputs.dry_run }}
         run: |
-          claude -p "$(cat .github/auto-bet-prompt.md)" \
+          PROMPT="$(cat .github/auto-bet-prompt.md)"
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "::notice::DRY RUN — no bets will be submitted"
+            PROMPT="$PROMPT"$'\n\n'"DRY RUN OVERRIDE: This is a dry run. Call place_bets and place_bonus_bets with dry_run=true so that NOTHING is submitted. Still report exactly what you WOULD place."
+          fi
+          claude -p "$PROMPT" \
             --mcp-config "$RUNNER_TEMP/mcp-config.json" \
             --allowedTools "mcp__kicktipp__get_status,mcp__kicktipp__get_rules,mcp__kicktipp__get_bets,mcp__kicktipp__get_overview,mcp__kicktipp__get_leaderboard,mcp__kicktipp__get_table,mcp__kicktipp__get_bonus_questions,mcp__kicktipp__place_bets,mcp__kicktipp__place_bonus_bets" \
             --dangerously-skip-permissions \
