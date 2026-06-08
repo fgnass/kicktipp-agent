@@ -18,6 +18,7 @@ import {
 } from './helpers/parse-bet-arg.js';
 import { escapeCssValue } from './helpers/escape-css-value.js';
 import { parseStandings, TableTeam, TableGroup } from './helpers/parse-standings.js';
+import { resolveBonusSelections } from './helpers/resolve-bonus.js';
 
 export type { TableTeam, TableGroup };
 
@@ -554,51 +555,12 @@ export async function placeBonusBets(page: Page, community: string, bets: string
   const questions = await fetchBonusQuestions(page, community);
   if (!questions.length) throw new Error('No editable bonus questions found.');
 
-  // Group by question
-  const argsByQuestion = new Map<string, string[]>();
-  for (const arg of bets) {
-    const eqIdx = arg.lastIndexOf('=');
-    if (eqIdx === -1) throw new Error(`Invalid bonus bet '${arg}'. Use format: "Question text=Answer"`);
-    const question = arg.slice(0, eqIdx).trim();
-    const answer = arg.slice(eqIdx + 1).trim();
-    if (!question || !answer) throw new Error(`Invalid bonus bet '${arg}'. Both question and answer required.`);
-    const key = question.toLowerCase();
-    if (!argsByQuestion.has(key)) argsByQuestion.set(key, []);
-    argsByQuestion.get(key)!.push(answer);
-  }
+  const selections = resolveBonusSelections(questions, bets);
 
   const placed: PlacedBonusBet[] = [];
-
-  for (const [, answers] of argsByQuestion) {
-    const q = questions.find((qq) => qq.question.toLowerCase() === answers[0].toLowerCase()) ??
-      questions.find((qq) => {
-        // Find by the original question text from args
-        for (const arg of bets) {
-          const eqIdx = arg.lastIndexOf('=');
-          const qText = arg.slice(0, eqIdx).trim();
-          if (qq.question.toLowerCase() === qText.toLowerCase()) return true;
-        }
-        return false;
-      });
-
-    if (!q) {
-      const available = questions.map((qq) => qq.question).join(', ');
-      throw new Error(`No bonus question found matching: "${answers[0]}". Available: ${available}`);
-    }
-
-    if (answers.length > q.selects.length) {
-      throw new Error(`Too many answers for "${q.question}": got ${answers.length}, max ${q.selects.length}`);
-    }
-
-    for (let i = 0; i < answers.length; i++) {
-      const option = q.selects[i].options.find((o) => o.text.toLowerCase() === answers[i].toLowerCase());
-      if (!option) {
-        const available = q.selects[i].options.map((o) => o.text).join(', ');
-        throw new Error(`No option "${answers[i]}" for question "${q.question}". Available: ${available}`);
-      }
-      await page.selectOption(`select[name="${escapeCssValue(q.selects[i].name)}"]`, option.value);
-      placed.push({ question: q.question, answer: option.text });
-    }
+  for (const sel of selections) {
+    await page.selectOption(`select[name="${escapeCssValue(sel.selectName)}"]`, sel.value);
+    placed.push({ question: sel.question, answer: sel.answer });
   }
 
   if (submit) {
