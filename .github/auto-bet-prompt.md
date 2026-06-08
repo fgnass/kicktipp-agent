@@ -23,8 +23,10 @@ State which posture you picked and why.
 
 ## 3. Pick each scoreline by expected value
 
-For every untipped match:
-1. Convert the odds into outcome probabilities (remove the bookmaker margin so home/draw/away sum to ~100%). Lower odds = stronger favorite.
+For every untipped match, first get outcome probabilities:
+1. Prefer the `odds` from `get_bets` — convert them into outcome probabilities (remove the bookmaker margin so home/draw/away sum to ~100%; lower odds = stronger favorite).
+   - **If `get_bets` returns no odds** (empty/missing), look them up online with `WebSearch`/`WebFetch`: search for current bookmaker odds or win probabilities for that exact fixture, using the team names and kickoff date from `get_bets` (a few focused queries are enough), and derive the probabilities from what you find.
+   - Only if an online lookup is inconclusive, fall back to team-strength / football knowledge.
 2. Consider realistic scorelines (mostly 0–3 goals per side: 1:0, 2:0, 2:1, 1:1, 0:0, 3:1, …), oriented correctly — the first team listed is the home side.
 3. Choose the scoreline that **maximizes expected points** under the scoring rules from step 1, adjusted by your variance posture:
    - If scoring is odds-weighted, factor in that a correct underdog or draw pays more — the highest-probability result is often not the highest-EV tip.
@@ -40,7 +42,7 @@ Bonus questions (group winners, semi-finalists, top scorer, champion, …) are a
 
 1. `get_bonus_questions` — each question has one or more `selects`; a select's `selected` is `-1` when unanswered.
 2. Only answer questions where **all** selects are still `-1` (fully unanswered). Never overwrite a question that already has answers. If everything is answered, skip this section.
-3. Strategy: **favorites / most likely outcome** — pick the strongest team(s) for each question (use football knowledge; `get_table` may help for group standings). For a question with multiple selects (e.g. "Wer erreicht das Halbfinale?"), pick that many DISTINCT strong teams.
+3. Strategy: **favorites / most likely outcome** — pick the strongest team(s) for each question. Ground this in current data where possible: use `WebSearch`/`WebFetch` for outright odds or rankings (tournament winner, group winners) and `get_table` for group standings, rather than relying on memory alone. For a question with multiple selects (e.g. "Wer erreicht das Halbfinale?"), pick that many DISTINCT strong teams.
 4. Place them with `place_bonus_bets`, `dry_run=false`. Format each answer as `"Question text=Answer"`, using the EXACT question text and EXACT option text from `get_bonus_questions`. For a multi-select question, pass one entry per pick (same question text, different answers).
 
 ## 6. Report
