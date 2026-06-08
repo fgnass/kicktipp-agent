@@ -218,9 +218,9 @@ sensible predictions for any match you haven't tipped yet. The strategy lives in
    `Place bets` step output for the agent's summary.
 
 The cron is `0 6 * * *` (06:00 UTC). Edit it in the workflow to change the time, or add
-more entries to run several times a day. The job uses `claude-opus-4-8`; a daily run is
-just a handful of small tool calls, so the cost is minimal. Switch the `--model` flag to
-`claude-sonnet-4-6` in the workflow if you want to cut token cost further.
+more entries to run several times a day. The job uses `claude-sonnet-4-6` to keep cost low.
+Switch the `--model` flag in the workflow to `claude-opus-4-8` for stronger predictions, or
+`claude-haiku-4-5` for the cheapest runs.
 
 > **Note on credentials in CI:** secrets are injected only into the steps that need them
 > and the MCP config (with your kicktipp password) is written to the ephemeral runner's

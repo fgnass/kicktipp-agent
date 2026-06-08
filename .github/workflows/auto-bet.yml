@@ -63,4 +63,4 @@ jobs:
             --mcp-config "$RUNNER_TEMP/mcp-config.json" \
             --allowedTools "mcp__kicktipp__get_status,mcp__kicktipp__get_rules,mcp__kicktipp__get_bets,mcp__kicktipp__get_overview,mcp__kicktipp__get_leaderboard,mcp__kicktipp__get_table,mcp__kicktipp__get_bonus_questions,mcp__kicktipp__place_bets,mcp__kicktipp__place_bonus_bets,WebSearch,WebFetch" \
             --dangerously-skip-permissions \
-            --model claude-opus-4-8
+            --model claude-sonnet-4-6
