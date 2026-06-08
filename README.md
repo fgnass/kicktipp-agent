@@ -134,5 +134,7 @@ tooling (kept on the `upstream-pr` branch, ready to contribute back upstream):
 
 ## Credits
 
-Originally forked from [schwalle/kicktipp-betbot](https://github.com/schwalle/kicktipp-betbot)
-by Stefan, then rewritten in TypeScript with a CLI, MCP server and Cheerio-based parsing.
+- The TypeScript rewrite this fork builds on — the CLI, MCP server and Cheerio-based parsing —
+  is by [christianheidorn](https://github.com/christianheidorn/kicktipp-agent).
+- That project itself originated from [schwalle/kicktipp-betbot](https://github.com/schwalle/kicktipp-betbot)
+  by Stefan.
