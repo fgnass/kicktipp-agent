@@ -175,16 +175,22 @@ runs where there is no `config.ini`.
 ### German vs. international communities (`KICKTIPP_SITE`)
 
 kicktipp runs two sites with different URL paths: **kicktipp.de** (German segments like
-`tippabgabe`/`tippuebersicht`, the default) and **kicktipp.com** (English `predict`/
-`leaderboard`). A community only renders on the site matching its language. If yours lives
-on kicktipp.com, switch sites via the `KICKTIPP_SITE` environment variable or config:
+`tippabgabe`/`tippuebersicht`) and **kicktipp.com** (English `predict`/`leaderboard`). A
+community only renders on the site matching its language.
+
+**This is detected automatically.** The first time you use a community, the tool probes it,
+figures out which site it lives on, and remembers the result per community under a `[sites]`
+section in `config.ini` (re-logging in on the right domain if needed). You don't normally
+need to configure anything.
+
+To force a site (skipping detection) — e.g. for debugging — set `KICKTIPP_SITE`, which
+overrides everything:
 
 ```bash
-KICKTIPP_SITE=com kicktipp players
-# or persist it:  set "name=com" under a [site] section in config.ini
+KICKTIPP_SITE=com kicktipp players   # valid values: de, com
 ```
 
-Valid values are `de` (default) and `com`.
+To re-run detection for a community, delete its line from the `[sites]` section.
 
 ## Development
 

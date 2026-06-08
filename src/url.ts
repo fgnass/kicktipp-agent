@@ -1,4 +1,4 @@
-import { loadSite } from './config.js';
+import { loadSite, loadSiteForCommunity } from './config.js';
 
 // kicktipp serves the same game under two sites with different route names:
 //  - kicktipp.de uses German segments (tippabgabe, tippuebersicht, ...)
@@ -45,31 +45,38 @@ const SITES: Record<KicktippSite, SiteProfile> = {
   },
 };
 
-export function getSite(): KicktippSite {
-  const raw = (loadSite() || 'de').toLowerCase();
-  return raw === 'com' ? 'com' : 'de';
+function normalizeSite(raw: string | null): KicktippSite {
+  return (raw || 'de').toLowerCase() === 'com' ? 'com' : 'de';
 }
 
-function profile(): SiteProfile {
-  return SITES[getSite()];
+/**
+ * The site to use. Pass a community to get its resolved (possibly auto-detected)
+ * site; omit it for the global/default site (used before a community is known).
+ */
+export function getSite(community?: string): KicktippSite {
+  return normalizeSite(community ? loadSiteForCommunity(community) : loadSite());
+}
+
+export function siteBase(site: KicktippSite): string {
+  return SITES[site].base;
 }
 
 export function getBaseUrl(): string {
-  return profile().base;
+  return SITES[getSite()].base;
 }
 
-export function getLoginUrl(): string {
-  return `${profile().base}/info/profil/login`;
+export function getLoginUrl(site?: KicktippSite): string {
+  return `${SITES[site ?? getSite()].base}/info/profil/login`;
 }
 
 export function getMyCommunitiesUrl(): string {
-  return `${profile().base}/info/profil/meinetipprunden`;
+  return `${SITES[getSite()].base}/info/profil/meinetipprunden`;
 }
 
 type RouteKey = keyof SiteProfile['routes'];
 
 function communityRoute(community: string, route: RouteKey): string {
-  const p = profile();
+  const p = SITES[getSite(community)];
   return `${p.base}/${encodeURIComponent(community)}/${p.routes[route]}`;
 }
 

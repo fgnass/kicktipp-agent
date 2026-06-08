@@ -3,8 +3,9 @@ import * as cheerio from 'cheerio';
 import type { AnyNode } from 'domhandler';
 import fs from 'fs';
 import path from 'path';
-import { getBaseUrl, getLoginUrl, getMyCommunitiesUrl, getLeaderboardUrl } from './url.js';
-import { SESSION_FILE, loadCredentials } from './config.js';
+import { getBaseUrl, getLoginUrl, getMyCommunitiesUrl, getLeaderboardUrl, getSite, KicktippSite } from './url.js';
+import { SESSION_FILE, loadCredentials, loadSiteForCommunity, saveSiteForCommunity } from './config.js';
+import { detectAlternateSite } from './helpers/detect-site.js';
 import { status, statusClear } from './helpers/spinner.js';
 
 export async function launchBrowser(): Promise<{ browser: Browser; page: Page; context: BrowserContext }> {
@@ -58,9 +59,9 @@ export async function dismissConsent(page: Page): Promise<void> {
   }
 }
 
-async function login(page: Page, username: string, password: string): Promise<void> {
+async function login(page: Page, username: string, password: string, loginUrl: string = getLoginUrl()): Promise<void> {
   status('Logging in...');
-  await page.goto(getLoginUrl());
+  await page.goto(loginUrl);
   await page.waitForLoadState('domcontentloaded');
   await dismissConsent(page);
   await page.fill('input[name="kennung"]', username);
@@ -120,4 +121,43 @@ export async function getPlayers(page: Page, community: string): Promise<string[
     if (name) players.push(name);
   });
   return players;
+}
+
+/** Log in on a specific site (e.g. after auto-switching) and persist the session. */
+async function loginOnSite(page: Page, site: KicktippSite): Promise<void> {
+  const { email, password } = await loadCredentials();
+  await login(page, email, password, getLoginUrl(site));
+  fs.mkdirSync(path.dirname(SESSION_FILE), { recursive: true });
+  await page.context().storageState({ path: SESSION_FILE });
+  fs.chmodSync(SESSION_FILE, 0o600);
+}
+
+/**
+ * Ensure we use the correct kicktipp site for this community. Runs once per
+ * community: if the site is not yet known (no env override / no persisted value),
+ * probe a community page, detect whether it actually lives on the other domain,
+ * persist the result, and re-login on that domain if we switched.
+ */
+export async function ensureCommunitySite(page: Page, community: string): Promise<void> {
+  if (loadSiteForCommunity(community) !== null) return; // already known or overridden
+
+  const current = getSite(community); // defaults to 'de'
+  try {
+    status('Detecting site...');
+    await page.goto(getLeaderboardUrl(community));
+    await page.waitForLoadState('domcontentloaded');
+    await dismissConsent(page);
+    const alt = detectAlternateSite(cheerio.load(await page.content()), community, current);
+    statusClear();
+
+    if (alt) {
+      saveSiteForCommunity(community, alt);
+      await loginOnSite(page, alt);
+    } else {
+      saveSiteForCommunity(community, current);
+    }
+  } catch {
+    // Best effort: leave the site unresolved and retry on the next run.
+    statusClear();
+  }
 }
