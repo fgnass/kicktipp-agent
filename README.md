@@ -168,6 +168,24 @@ The MCP server accepts credentials in two ways (checked in this order):
 
 If neither is found, the server returns an error guiding the agent to inform you.
 
+The community and player can also be set via the environment (`KICKTIPP_COMMUNITY`,
+`KICKTIPP_PLAYER`), which take precedence over the config file — handy for headless/CI
+runs where there is no `config.ini`.
+
+### German vs. international communities (`KICKTIPP_SITE`)
+
+kicktipp runs two sites with different URL paths: **kicktipp.de** (German segments like
+`tippabgabe`/`tippuebersicht`, the default) and **kicktipp.com** (English `predict`/
+`leaderboard`). A community only renders on the site matching its language. If yours lives
+on kicktipp.com, switch sites via the `KICKTIPP_SITE` environment variable or config:
+
+```bash
+KICKTIPP_SITE=com kicktipp players
+# or persist it:  set "name=com" under a [site] section in config.ini
+```
+
+Valid values are `de` (default) and `com`.
+
 ## Development
 
 ```bash

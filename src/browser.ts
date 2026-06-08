@@ -3,7 +3,7 @@ import * as cheerio from 'cheerio';
 import type { AnyNode } from 'domhandler';
 import fs from 'fs';
 import path from 'path';
-import { URL_BASE, URL_LOGIN, getLeaderboardUrl } from './url.js';
+import { getBaseUrl, getLoginUrl, getMyCommunitiesUrl, getLeaderboardUrl } from './url.js';
 import { SESSION_FILE, loadCredentials } from './config.js';
 import { status, statusClear } from './helpers/spinner.js';
 
@@ -18,7 +18,7 @@ export async function launchBrowser(): Promise<{ browser: Browser; page: Page; c
       storageState: SESSION_FILE,
     });
     const page = await context.newPage();
-    await page.goto(URL_BASE);
+    await page.goto(getBaseUrl());
     await page.waitForLoadState('domcontentloaded');
     if (!page.url().includes('/login')) {
       statusClear();
@@ -43,7 +43,10 @@ export async function dismissConsent(page: Page): Promise<void> {
   try {
     await page.waitForSelector('iframe[src*="privacy-mgmt"]', { timeout: 2000 });
     for (const frame of page.frames()) {
-      const btn = await frame.$('button:has-text("Accept and continue")');
+      const btn =
+        (await frame.$('button:has-text("Accept and continue")')) ||
+        (await frame.$('button:has-text("Akzeptieren und weiter")')) ||
+        (await frame.$('button[title="Akzeptieren und weiter"]'));
       if (btn) {
         await btn.click();
         await page.waitForSelector('iframe[src*="privacy-mgmt"]', { state: 'hidden', timeout: 3000 });
@@ -57,7 +60,7 @@ export async function dismissConsent(page: Page): Promise<void> {
 
 async function login(page: Page, username: string, password: string): Promise<void> {
   status('Logging in...');
-  await page.goto(URL_LOGIN);
+  await page.goto(getLoginUrl());
   await page.waitForLoadState('domcontentloaded');
   await dismissConsent(page);
   await page.fill('input[name="kennung"]', username);
@@ -73,7 +76,7 @@ async function login(page: Page, username: string, password: string): Promise<vo
 
 export async function getCommunities(page: Page): Promise<string[]> {
   status('Fetching communities...');
-  await page.goto(`${URL_BASE}/info/profil/meinetipprunden`);
+  await page.goto(getMyCommunitiesUrl());
   await page.waitForLoadState('domcontentloaded');
   await dismissConsent(page);
 
@@ -84,9 +87,9 @@ export async function getCommunities(page: Page): Promise<string[]> {
     const href = ($(el).attr('href') || '').replace(/\//g, '');
     const text = $(el).text().trim();
     const menuDiv = $(el).find('div.menu-title-mit-tippglocke');
-    if (
-      href.toLowerCase() === text.toLowerCase() ||
-      (menuDiv.length && menuDiv.text().trim().toLowerCase() === href.toLowerCase())
+    const normalize = (s: string) => s.toLowerCase().replace(/[ _-]/g, ' ');
+    if (normalize(href) === normalize(text) ||
+      (menuDiv.length && normalize(menuDiv.text().trim()) === normalize(href))
     ) {
       communities.push(href);
     }

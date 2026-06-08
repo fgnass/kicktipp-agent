@@ -112,8 +112,25 @@ export async function loadCredentials(): Promise<{ email: string; password: stri
 }
 
 export function loadCommunity(): string | null {
+  if (process.env.KICKTIPP_COMMUNITY) return process.env.KICKTIPP_COMMUNITY;
   const config = readConfig();
   return config.community?.name || null;
+}
+
+/**
+ * Which kicktipp site to use: 'de' (German routes, default) or 'com' (English routes).
+ * German-only communities live on kicktipp.de; international ones on kicktipp.com.
+ */
+export function loadSite(): string | null {
+  if (process.env.KICKTIPP_SITE) return process.env.KICKTIPP_SITE;
+  const config = readConfig();
+  return config.site?.name || null;
+}
+
+export function saveSite(name: string): void {
+  const config = readConfig();
+  config.site = { name };
+  writeConfig(config);
 }
 
 export function saveCommunity(name: string): void {
@@ -123,6 +140,7 @@ export function saveCommunity(name: string): void {
 }
 
 export function loadPlayer(): string | null {
+  if (process.env.KICKTIPP_PLAYER) return process.env.KICKTIPP_PLAYER;
   const config = readConfig();
   return config.player?.name || null;
 }
