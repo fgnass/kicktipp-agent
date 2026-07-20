@@ -4,9 +4,9 @@ name: Auto Bet
 # predictions for the current matchday via the kicktipp MCP server.
 
 on:
-  schedule:
+  # schedule:
     # 06:00 UTC daily (= 08:00 CEST). Adjust as you like; cron is UTC.
-    - cron: '0 6 * * *'
+    # - cron: '0 6 * * *'
   workflow_dispatch: # allows manual runs from the Actions tab for testing
     inputs:
       dry_run:
